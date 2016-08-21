@@ -44,7 +44,7 @@
 		$sql = "
 	    SELECT *
 	    FROM   $table a, `$db2`.`$table` b
-	    WHERE  $condition AND a.$index = b.$index
+	    WHERE  $condition AND a.$index = b.$index LIMIT 1
 		";
 		$result = $conn->query($sql);
 		if ($result->num_rows > 0) {
