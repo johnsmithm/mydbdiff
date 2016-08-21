@@ -13,9 +13,30 @@ $( document ).ready(function() {
   	return ac;
   }
 
+  function recursiveDiff(counter,tablesD,ac,data){
+    data['action'] = 'table';
+    data['table'] = tablesD[counter];
+    counter++;
+    $.ajax({
+          type: "GET",
+          url: "http://localhost/mydbdiff/function.php",
+          data: data,
+          success: function(tables){
+            tables = JSON.parse(tables);
+            console.log(tables);         
+            if(tables != "")   {
+              addArcodion(ac,tables['name'],tables['what']);
+              $( "#accordion" ).accordion( "refresh" );
+            }
+            if(counter<tablesD.length)  
+              recursiveDiff(counter,tablesD,ac,data);
+          }
+        });
+  }
+
 
   $("input[name=data]").click(function(){
-  		var data={'action':'data'};
+  		var data={'action':'tables'};
   		data['user']     = $("input[name=user]").val();
   		data['password'] = $("input[name=password]").val();
   		data['db1']      = $("input[name=db1]").val();
@@ -31,23 +52,25 @@ $( document ).ready(function() {
       }
 
       console.log(data);
+      var counter = 0;
+      var tablesD = [];
      // return;
   		$.ajax({
-				  type: "GET",
-				  url: "http://localhost/mydbdiff/function.php",
-				  data: data,
-				  success: function(tables){
-            tables = JSON.parse(tables);
-            console.log(tables);
-				  	var ac = $('<div id="accordion"></div>');
-
-            console.log(tables.length);
-				  	for(var i =0;i< tables.length;++i){
-				  		addArcodion(ac,tables[i]['name'],tables[i]['what']);
-				  	}
-					  $("#contentTable").html(ac);
-					  $( "#accordion" ).accordion();
-				  }
-				});
+          type: "GET",
+          url: "http://localhost/mydbdiff/function.php",
+          data: data,
+          success: function(tables){
+            tablesD = JSON.parse(tables);
+            console.log(tablesD);
+            var ac = $('<div id="accordion"></div>');
+            $("#contentTable").html(ac);
+            $( "#accordion" ).accordion();
+            if(counter < tablesD.length){
+              recursiveDiff(counter,tablesD,ac,data);
+            }
+            console.log(tablesD.length);           
+            
+          }
+        });
   });
 });
