@@ -1,9 +1,53 @@
-$( document ).ready(function() {
-  
-  
+  var urlGlobal = "http://192.168.148.199/mediathek/mydbdiff/function.php";
+ 
+ function makeTable(diff){
+	 console.log(diff);
+	 var table = $('<table>').attr('border','1');
+	 var tr = $('<tr>');
+	 for(var i=0;i<diff['fields'].length;++i)
+		 tr.append($('<th>').text(diff['fields'][i]));
+	 table.append(tr);
+	 for(var j=0;j<diff['diff'].length;++j){
+		 var tr = $('<tr>');
+		for(var i=0;i<diff['fields'].length;++i){
+			var a = diff['diff'][j][diff['fields'][i]], b = diff['diff'][j]['b'+diff['fields'][i]];
+			if(a!=b)a='<span style="color:green">'+a+'</span>/<span style="color:red">'+b+'</span>';
+			tr.append($('<td>').html(a));
+		}
+		table.append(tr);
+	 }
+	 return table;
+ }
+ 
+ function showTableDiff(obj){
+	  var name = $(obj).next().find('input[class=checkallInsideTable]').attr('name');
+	  var arr = name.split('checkallname');
+	  name = arr[0];
+		var data = {};
+		data['user']     = "root";
+		data['table']     = name;
+        data['password'] = "password";
+        data['db1']      = "dev1";
+        data['db2']      = "dev2";
+        data['host']     = "192.168.148.199";
+		data['action']='diffTable';
+	  $.ajax({
+          type: "GET",
+          url: urlGlobal,
+          data: data,
+          success: function(diff){
+            diff = JSON.parse(diff);
+            console.log(diff); 
+			$( "#dialog" ).html(diff['what'] == 'diff'? makeTable(diff):diff['what']);	
+            $( "#dialog" ).dialog( "open" );
+          }
+        });
+  }
 
+$( document ).ready(function() {
+ 
   function addArcodion(ac, table, what){
-  	var h2 = $("<h2></h2>").append(table);
+  	var h2 = $("<h2></h2>").append(table).attr('onclick','showTableDiff(this)');
   	var div = $("<div>").append('<label for="'
   		+table+'checkall">Check All</label><input class="checkallInsideTable" type="checkbox" name="'
   		+table+'checkallname"" id="'
@@ -19,7 +63,7 @@ $( document ).ready(function() {
     counter++;
     $.ajax({
           type: "GET",
-          url: "http://localhost/mydbdiff/function.php",
+          url: urlGlobal,
           data: data,
           success: function(tables){
             tables = JSON.parse(tables);
@@ -28,7 +72,7 @@ $( document ).ready(function() {
               addArcodion(ac,tables['name'],tables['what']);
               $( "#accordion" ).accordion( "refresh" );
             }
-            if(counter<tablesD.length)  
+            if(counter<tablesD.length && counter<1000)  
               recursiveDiff(counter,tablesD,ac,data);
           }
         });
@@ -45,10 +89,10 @@ $( document ).ready(function() {
 
       if(data['host'] == ""){
         data['user']     = "root";
-        data['password'] = "123456";
+        data['password'] = "password";
         data['db1']      = "dev1";
-        data['db2']      = "d7";
-        data['host']     = "localhost";
+        data['db2']      = "dev2";
+        data['host']     = "192.168.148.199";
       }
 
       console.log(data);
@@ -57,7 +101,7 @@ $( document ).ready(function() {
      // return;
   		$.ajax({
           type: "GET",
-          url: "http://localhost/mydbdiff/function.php",
+          url: urlGlobal,
           data: data,
           success: function(tables){
             tablesD = JSON.parse(tables);
@@ -73,4 +117,24 @@ $( document ).ready(function() {
           }
         });
   });
+  
+  $( "#dialog" ).dialog({
+		autoOpen: false,
+		width: 400,
+		buttons: [
+			{
+				text: "Ok",
+				click: function() {
+					$( this ).dialog( "close" );
+				}
+			},
+			{
+				text: "Cancel",
+				click: function() {
+					$( this ).dialog( "close" );
+				}
+			}
+		]
+	});
+
 });

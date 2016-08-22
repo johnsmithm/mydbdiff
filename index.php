@@ -38,7 +38,10 @@ include("fucntion.php");
 
 <!-- Accordion -->
 <div id="contentTable"></div>
-
+<!-- ui-dialog -->
+<div id="dialog" title="Dialog Title">
+	<p>Some random text</p>
+</div>
 
 
 <script src="jquery-ui-1.12.0.custom/external/jquery/jquery.js"></script>

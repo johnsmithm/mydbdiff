@@ -1,12 +1,12 @@
 <?php
-	$host = "localhost";
+	$host = "192.168.148.199";
 	$user = "root";
-	$password = "123456";
+	$password = "password";
 	$db1 = "dev1";
-	$db2 = "d7";
-	$table = "role";
-	$index = "name";
-	$reference = "rid";
+	$db2 = "dev2";
+	$table = "field_data_field_art";
+	$index = "field_art_tid";
+	$reference = "entity_id";
 	
 
 	// Create connection
@@ -17,12 +17,22 @@
 	} 
 
 	$sql = "
-	    SELECT b.name, a.name
-	    FROM    `dev1`.$table a, `d7`.`$table` b
-	    WHERE  a.$reference != b.$reference AND a.$index != b.$index
+	    SELECT a.$index, b.$reference
+	    FROM    `dev1`.$table a, `dev2`.`$table` b
+	    WHERE  a.$reference = b.$reference AND a.$index!=b.$index
 	";
 	//$sql = "show tables from `d7`"; //Tables_in_dev1
-	//$sql = "show index from `d7`.$table";// Column_name // [Key_name] => PRIMARY
+	$sql = "show index from `$db1`.$table";// Column_name // [Key_name] => PRIMARY
+	/*$sql = "SELECT a.entity_type , b.entity_type AS bentity_type, a.entity_id , b.entity_id AS bentity_id, a.deleted , b.deleted AS bdeleted, a.delta ,
+	b.delta AS bdelta, a.language , b.language AS blanguage, a.entity_type , b.entity_type AS bentity_type, a.bundle , b.bundle AS bbundle, a.deleted ,
+	b.deleted AS bdeleted, a.entity_id , b.entity_id AS bentity_id, a.revision_id , b.revision_id AS brevision_id, a.language , b.language AS blanguage,
+	a.field_art_tid , b.field_art_tid AS bfield_art_tid FROM field_data_field_art a, `dev2`.`field_data_field_art` b WHERE (a.entity_type!=b.entity_type
+	OR a.deleted!=b.deleted OR a.delta!=b.delta OR a.language!=b.language OR a.entity_type!=b.entity_type OR a.bundle!=b.bundle OR a.deleted!=b.deleted OR
+	a.revision_id!=b.revision_id OR a.language!=b.language OR a.field_art_tid!=b.field_art_tid ) AND a.entity_id = b.entity_id AND NOT EXISTS 
+	(SELECT * FROM `dev2`.`field_data_field_art` bb WHERE (a.entity_type=bb.entity_type AND a.entity_id=bb.entity_id AND a.deleted=bb.deleted AND
+	a.delta=bb.delta AND a.language=bb.language AND a.entity_type=bb.entity_type AND a.bundle=bb.bundle
+	AND a.deleted=bb.deleted AND a.entity_id=bb.entity_id AND a.revision_id=bb.revision_id AND a.language=bb.language AND 
+	a.field_art_tid=bb.field_art_tid ) LIMIT 1) LIMIT 1 ";*/
 	$result = $conn->query($sql);
 	echo "difference <br />";
 	if ($result->num_rows > 0) {
