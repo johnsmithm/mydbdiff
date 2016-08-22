@@ -1,7 +1,99 @@
   var urlGlobal = "http://localhost/mydbdiff/function.php";
+ 
+ // Compute the edit distance between the two given strings
+function getEditDistance(a, b) {
+  var matrix = [];
+  // increment along the first column of each row
+  var i;
+  for (i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+  // increment each column in the first row
+  var j;
+  for (j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+  // Fill in the rest of the matrix
+  for (i = 1; i <= b.length; i++) {
+    for (j = 1; j <= a.length; j++) {
+      if (b.charAt(i-1) == a.charAt(j-1)) {
+        matrix[i][j] = matrix[i-1][j-1];
+      } else {
+        matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
+                                Math.min(matrix[i][j-1] + 1, // insertion
+                                         matrix[i-1][j] + 1)); // deletion
+      }
+    }
+  }
+  var edit = "", ne="", de="";
+  i = a.length; j = b.length;
+
+  while(i>=0 && j>=0){
+    if(a[i]==b[i]){
+      if(de!=""){
+        edit+="<span style='color:red' >"+de+'</span>';
+        de = "";
+      }
+      if(ne!=""){
+        edit+="<span style='color:green' >"+ne+'</span>';
+        ne = "";
+      }
+      edit+=a[i];
+      --i;--j;
+    }else{
+      if(matrix[i][j-1]>matrix[i-1][j]){
+        if(de!=""){
+          edit+="<span style='color:red' >"+de+'</span>';
+          de = "";
+        }
+        ne += a[i];
+        i--;
+      }else{
+        if(ne!=""){
+          edit+="<span style='color:green' >"+ne+'</span>';
+          ne = "";
+        }
+        de += b[j];
+        --j;
+      }
+    }
+  }
+  for(;i>=0;--i)ne+=a[i];
+  edit+="<span style='color:green' >"+ne+'</span>';
+  for(;j>=0;--j)de+=b[j];
+  edit+="<span style='color:red' >"+de+'</span>';
+  return edit;
+  //return matrix[b.length][a.length];
+}
+
  function showText(obj){
-    alert("todo: use small cost edit algorithm!");
-    $( "#dialogText" ).html($(obj).next().html()).dialog( "open" );
+    //alert("todo: use small cost edit algorithm!");
+    var a = $(obj).next().html();
+    var b = a.split("###");
+    var base = difflib.stringAsLines(b[0]);
+    var newtxt = difflib.stringAsLines(b[1]);
+
+    // create a SequenceMatcher instance that diffs the two sets of lines
+    var sm = new difflib.SequenceMatcher(base, newtxt);
+
+    // get the opcodes from the SequenceMatcher instance
+    // opcodes is a list of 3-tuples describing what changes should be made to the base text
+    // in order to yield the new text
+    var opcodes = sm.get_opcodes();
+    var contextSize = null;
+
+    // build the diff view and add it to the current DOM
+    $("#dialogText").html(diffview.buildView({
+        baseTextLines: base,
+        newTextLines: newtxt,
+        opcodes: opcodes,
+        // set the display titles for each resource
+        baseTextName: "Base Text",
+        newTextName: "New Text",
+        contextSize: contextSize,
+        viewType: true ? 1 : 0
+    }));
+    $( "#dialogText" ).dialog( "open" );
  }
  function makeTable(diff){
 	 console.log(diff);

@@ -9,6 +9,7 @@ include("fucntion.php");
 	<meta charset="utf-8">
 	<title>jQuery UI Example Page</title>
 	<link href="jquery-ui-1.12.0.custom/jquery-ui.css" rel="stylesheet">
+	<link href="jsdifflib/diffview.css" rel="stylesheet">
 	<style>
 	body{
 		font-family: "Trebuchet MS", sans-serif;
@@ -49,6 +50,8 @@ include("fucntion.php");
 
 <script src="jquery-ui-1.12.0.custom/external/jquery/jquery.js"></script>
 <script src="jquery-ui-1.12.0.custom/jquery-ui.js"></script>
+<script src="jsdifflib/difflib.js"></script>
+<script src="jsdifflib/diffview.js"></script>
 <script src="js/script.js"></script>
 
 </body>
