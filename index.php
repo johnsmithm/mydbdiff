@@ -36,10 +36,13 @@ include("fucntion.php");
 
 
 
-<!-- Accordion -->
+
 <div id="contentTable"></div>
 <!-- ui-dialog -->
 <div id="dialog" title="Dialog Title">
+	<p>Some random text</p>
+</div>
+<div id="dialogText" title="Dialog Title">
 	<p>Some random text</p>
 </div>
 

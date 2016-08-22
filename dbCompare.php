@@ -4,7 +4,7 @@
 	$password = "password";
 	$db1 = "dev1";
 	$db2 = "dev2";
-	$table = "field_data_field_art";
+	$table = "sessions";
 	$index = "field_art_tid";
 	$reference = "entity_id";
 	
@@ -23,6 +23,7 @@
 	";
 	//$sql = "show tables from `d7`"; //Tables_in_dev1
 	$sql = "show index from `$db1`.$table";// Column_name // [Key_name] => PRIMARY
+	$sql = "DESCRIBE `$db1`.$table";
 	/*$sql = "SELECT a.entity_type , b.entity_type AS bentity_type, a.entity_id , b.entity_id AS bentity_id, a.deleted , b.deleted AS bdeleted, a.delta ,
 	b.delta AS bdelta, a.language , b.language AS blanguage, a.entity_type , b.entity_type AS bentity_type, a.bundle , b.bundle AS bbundle, a.deleted ,
 	b.deleted AS bdeleted, a.entity_id , b.entity_id AS bentity_id, a.revision_id , b.revision_id AS brevision_id, a.language , b.language AS blanguage,

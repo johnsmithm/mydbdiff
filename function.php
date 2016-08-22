@@ -17,16 +17,16 @@
 		$possibleIndex = array('rid','id','uuid','entity_id','uid');
 		$fields = array();
 		$index = "";
-		$sql = "show index from `$db`.$table"; 
+		$sql = "DESCRIBE `$db`.$table"; 
 		$result = $conn->query($sql);
 		if ($result->num_rows > 0) {
 		    while($row = $result->fetch_assoc()) {
-		    	if(strpos('id', $row["Column_name"]) && $row['Null']!='YES')
-		    		$index = $row["Column_name"];
-				if($index == "" && $row['Key_name']=='PRIMARY')
-					$index = $row["Column_name"];
+		    	if(strpos('id', $row["Field"]) && $row['Null']=='NO')
+		    		$index = $row["Field"];
+				if($index == "" && $row['Key']=='PRI')
+					$index = $row["Field"];
 				//if($row['Key_name']==$row['Column_name'])
-					$fields[] = $row["Column_name"];
+					$fields[] = $row["Field"];
 				//echo "<pre>";
 				//print_r($row);
 				//echo "</pre>";
@@ -149,7 +149,7 @@
 				$tablesDB2 = getTables($db1,$conn);
 				$value = $_REQUEST['table'];
 				if(!in_array($value, $tablesDB2)){
-					$result = array('name'=>$value, 'what'=>"table does not exists!");
+					$result = array('name'=>$value, 'what'=>"table");
 					break;
 				}
 				list($index,$fieldsDB1) = getFields($value,$db1,$conn);
@@ -158,7 +158,7 @@
 				$fd1 = array_diff($fieldsDB1,$fieldsDB2);
 				$fd2 = array_diff($fieldsDB2,$fieldsDB1);
 				if(count($fd1) != 0 || count($fd2)!=0){
-					$result = array('name'=>$value, 'what'=>"fields does not exists!".$index);
+					$result = array('name'=>$value, 'what'=>"field");
 					break;
 				}
 				/*echo "<pre>";
@@ -166,7 +166,7 @@
 				echo "</pre>";*/
 				$diff = getDiff($value,$fieldsDB2,$index,$db2,$conn,0,1);
 				if(count($diff)!=0){
-					$result = array('name'=>$value, 'what'=>"fields diff does exist!".$index);
+					$result = array('name'=>$value, 'what'=>"data:".$index);
 				}
 		break;
 		case "diffTable" :
