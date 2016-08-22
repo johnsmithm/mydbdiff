@@ -2,6 +2,8 @@
  
  // Compute the edit distance between the two given strings
 function getEditDistance(a, b) {
+  console.log(a);
+  console.log(b);
   var matrix = [];
   // increment along the first column of each row
   var i;
@@ -19,49 +21,68 @@ function getEditDistance(a, b) {
       if (b.charAt(i-1) == a.charAt(j-1)) {
         matrix[i][j] = matrix[i-1][j-1];
       } else {
-        matrix[i][j] = Math.min(matrix[i-1][j-1] + 1, // substitution
+        matrix[i][j] = Math.min(matrix[i-1][j-1] + 2, // substitution
                                 Math.min(matrix[i][j-1] + 1, // insertion
                                          matrix[i-1][j] + 1)); // deletion
       }
     }
   }
+  console.log(matrix[b.length][a.length]);
+  console.table(matrix);
+
   var edit = "", ne="", de="";
-  i = a.length; j = b.length;
+  i = a.length-1; j = b.length-1;
 
   while(i>=0 && j>=0){
-    if(a[i]==b[i]){
+    if(a[i]==b[j]){
       if(de!=""){
-        edit+="<span style='color:red' >"+de+'</span>';
+        edit="<span style='color:red' >"+de+'</span>'+edit;
         de = "";
       }
       if(ne!=""){
-        edit+="<span style='color:green' >"+ne+'</span>';
+        edit="<span style='color:green' >"+ne+'</span>'+edit;
         ne = "";
       }
-      edit+=a[i];
+      edit=a[i]+edit;
       --i;--j;
     }else{
-      if(matrix[i][j-1]>matrix[i-1][j]){
-        if(de!=""){
-          edit+="<span style='color:red' >"+de+'</span>';
-          de = "";
-        }
-        ne += a[i];
-        i--;
-      }else{
+      if((matrix[j][i+1]-1) == matrix[j+1][i+1]){
         if(ne!=""){
-          edit+="<span style='color:green' >"+ne+'</span>';
+          edit="<span style='color:red' >"+ne+'</span>'+edit;
           ne = "";
         }
-        de += b[j];
+        de = b[j]+de;
+        j--;
+      }else if((matrix[j+1][i]-1)==matrix[j+1][i+1]){
+        if(de!=""){
+          edit="<span style='color:red' >"+de+'</span>'+edit;
+          de = "";
+        }
+        ne = a[i]+ne;
+        i--;
+      }else{
+        if(de!=""){
+          edit="<span style='color:red' >"+de+'</span>'+edit;
+          de = "";
+        }
+        if(ne!=""){
+          edit="<span style='color:green' >"+ne+'</span>'+edit;
+          ne = "";
+        }
+        ne = a[i]+ne;
+        de = b[j]+de;
         --j;
+        --i;
       }
     }
+    console.log(edit);
   }
-  for(;i>=0;--i)ne+=a[i];
-  edit+="<span style='color:green' >"+ne+'</span>';
-  for(;j>=0;--j)de+=b[j];
-  edit+="<span style='color:red' >"+de+'</span>';
+  for(;i>=0;--i)ne=a[i]+ne;
+  if(ne!="")
+    edit="<span style='color:green' >"+ne+'</span>'+edit;
+  for(;j>=0;--j)de=b[j]+de;
+  if(de!="")
+    edit="<span style='color:red' >"+de+'</span>'+edit;
   return edit;
   //return matrix[b.length][a.length];
 }
@@ -92,7 +113,7 @@ function getEditDistance(a, b) {
         newTextName: "New Text",
         contextSize: contextSize,
         viewType: true ? 1 : 0
-    }));
+    })).append(getEditDistance(b[0],b[1]));
     $( "#dialogText" ).dialog( "open" );
  }
  function makeTable(diff){
@@ -243,5 +264,5 @@ $( document ).ready(function() {
 			}
 		]
 	});
-
+  console.log(getEditDistance("abcaionel","abbionel"));
 });
