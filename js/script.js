@@ -1,9 +1,11 @@
-  var urlGlobal = "http://localhost/mydbdiff/function.php";
+  var urlGlobal = "http://192.168.148.199/mediathek/mydbdiff/function.php";
  
  // Compute the edit distance between the two given strings
 function getEditDistance(a, b) {
-  console.log(a);
-  console.log(b);
+	console.log(a.length);
+	console.log(b.length);
+  if(a.length > 10000 && b.length > 10000)
+	  return "<span style='color:red' >"+b+'</span>'+"<span style='color:green' >"+a+'</span>';
   var matrix = [];
   // increment along the first column of each row
   var i;
@@ -27,11 +29,12 @@ function getEditDistance(a, b) {
       }
     }
   }
-  console.log(matrix[b.length][a.length]);
-  console.table(matrix);
+  //console.log(matrix[b.length][a.length]);
+  //console.table(matrix);
 
   var edit = "", ne="", de="";
   i = a.length-1; j = b.length-1;
+  var Ade=[],Ane=[];
 
   while(i>=0 && j>=0){
     if(a[i]==b[j]){
@@ -45,20 +48,22 @@ function getEditDistance(a, b) {
       }
       edit=a[i]+edit;
       --i;--j;
+	  Ade[j]=1;
+	  Ane[i]=1;
     }else{
-      if((matrix[j][i+1]-1) == matrix[j+1][i+1]){
+      if((matrix[j][i+1]+1) == matrix[j+1][i+1]){
         if(ne!=""){
           edit="<span style='color:red' >"+ne+'</span>'+edit;
           ne = "";
         }
-        de = b[j]+de;
+        de = b[j]+de; Ade[j]=0;
         j--;
-      }else if((matrix[j+1][i]-1)==matrix[j+1][i+1]){
+      }else if((matrix[j+1][i]+1)==matrix[j+1][i+1]){
         if(de!=""){
           edit="<span style='color:red' >"+de+'</span>'+edit;
           de = "";
         }
-        ne = a[i]+ne;
+        ne = a[i]+ne;Ane[i]=0;
         i--;
       }else{
         if(de!=""){
@@ -69,13 +74,13 @@ function getEditDistance(a, b) {
           edit="<span style='color:green' >"+ne+'</span>'+edit;
           ne = "";
         }
-        ne = a[i]+ne;
-        de = b[j]+de;
+        ne = a[i]+ne; Ane[i]=0;
+        de = b[j]+de; Ade[j]=0;
         --j;
         --i;
       }
     }
-    console.log(edit);
+  
   }
   for(;i>=0;--i)ne=a[i]+ne;
   if(ne!="")
@@ -83,15 +88,16 @@ function getEditDistance(a, b) {
   for(;j>=0;--j)de=b[j]+de;
   if(de!="")
     edit="<span style='color:red' >"+de+'</span>'+edit;
+
+   
   return edit;
-  //return matrix[b.length][a.length];
 }
 
  function showText(obj){
     //alert("todo: use small cost edit algorithm!");
     var a = $(obj).next().html();
     var b = a.split("###");
-    var base = difflib.stringAsLines(b[0]);
+   /* var base = difflib.stringAsLines(b[0]);
     var newtxt = difflib.stringAsLines(b[1]);
 
     // create a SequenceMatcher instance that diffs the two sets of lines
@@ -101,10 +107,10 @@ function getEditDistance(a, b) {
     // opcodes is a list of 3-tuples describing what changes should be made to the base text
     // in order to yield the new text
     var opcodes = sm.get_opcodes();
-    var contextSize = null;
+    var contextSize = null;*/
 
     // build the diff view and add it to the current DOM
-    $("#dialogText").html(diffview.buildView({
+    $("#dialogText")/*.html(diffview.buildView({
         baseTextLines: base,
         newTextLines: newtxt,
         opcodes: opcodes,
@@ -113,7 +119,7 @@ function getEditDistance(a, b) {
         newTextName: "New Text",
         contextSize: contextSize,
         viewType: true ? 1 : 0
-    })).append(getEditDistance(b[0],b[1]));
+    }))*/.empty().append(getEditDistance(b[0],b[1]));
     $( "#dialogText" ).dialog( "open" );
  }
  function makeTable(diff){
