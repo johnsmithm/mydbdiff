@@ -47,6 +47,7 @@
 	}
 
 	function getDiff($table, $fields, $index, $db2, $conn,$offset, $limit){
+		//todo: find drop and new rows
 		if($index == '')
 			return null;
 		$diff = array();
@@ -70,17 +71,39 @@
 			$notCondition  = '';
 		}
 		$notConditionB = str_replace('aa.','bb.',str_replace('b.','a.',$notCondition));
+		$limitString = " LIMIT $limit OFFSET $offset";
+		if($limit == 0){
+			$limitString = "";
+			$select = " COUNT(*) AS mediathekTableRowsNumber ";
+		}
 		$sql = "
 	    SELECT $select
 	    FROM   $table a, `$db2`.`$table` b
 	    WHERE  $condition AND a.$index = b.$index AND 
 		NOT EXISTS  (SELECT * FROM  `$table` aa WHERE  $notCondition LIMIT 1)  AND
-		NOT EXISTS  (SELECT * FROM  `$db2`.`$table` bb WHERE  $notConditionB LIMIT 1)  LIMIT $limit OFFSET $offset
+		NOT EXISTS  (SELECT * FROM  `$db2`.`$table` bb WHERE  $notConditionB LIMIT 1) $limitString
 		";
 		//echo $index.'<br/>';
 		//echo $sql;
+		//return null;
+		if(count($fields)==0)
+			return null;
+		if(count($fields)==1){
+			$sql = "SELECT $select
+	    FROM   $table a, `$db2`.`$table` b
+	    WHERE   a.$index = b.$index  ";
+		}
+		
 		$result = $conn->query($sql);
+		if($limit == 0){
+			$data = $result->fetch_assoc();
+			
+			if($data['mediathekTableRowsNumber'] != '0')
+				$diff[] = $data['mediathekTableRowsNumber'];
+			
+		}else 
 		if ($result->num_rows > 0) {
+			
 		    while($row = $result->fetch_assoc()) {
 		    	$diff[] = $row;
 			/*	echo "<pre>";
@@ -146,7 +169,7 @@
 			$result = getTables($db1,$conn);
 		break;
 		case "table":
-				$tablesDB2 = getTables($db1,$conn);
+				$tablesDB2 = getTables($db2,$conn);
 				$value = $_REQUEST['table'];
 				if(!in_array($value, $tablesDB2)){
 					$result = array('name'=>$value, 'what'=>"table");
@@ -164,17 +187,20 @@
 				/*echo "<pre>";
 				print_r($fieldsDB2);
 				echo "</pre>";*/
-				$diff = getDiff($value,$fieldsDB2,$index,$db2,$conn,0,1);
+				$diff = getDiff($value,$fieldsDB2,$index,$db2,$conn,0,0);
 				if(count($diff)!=0){
-					$result = array('name'=>$value, 'what'=>"data:".$index);
+					$result = array('name'=>$value, 'what'=>"data:".$index.':'.$diff[0]);
 				}
 		break;
 		case "diffTable" :
-				$tablesDB2 = getTables($db1,$conn);
+				$tablesDB2 = getTables($db2,$conn);
 				$value = $_REQUEST['table'];
+				$offset =  $_REQUEST['offset'];
+				$range =  $_REQUEST['range'];
 				$result = array('what'=>"nothing");
-				if(!in_array($value, $tablesDB2)){
-					$result = array('name'=>$value, 'what'=>"notable");
+				if(!in_array($value, $tablesDB2)){					
+					list($index,$fieldsDB1) = getFields($value,$db1,$conn);
+					$result = array('name'=>$value, 'what'=>"notable", 'new'=>$fieldsDB1, 'drop' => array());
 					break;
 				}
 				list($index,$fieldsDB1) = getFields($value,$db1,$conn);
@@ -183,10 +209,10 @@
 				$fd1 = array_diff($fieldsDB1,$fieldsDB2);
 				$fd2 = array_diff($fieldsDB2,$fieldsDB1);
 				if(count($fd1) != 0 || count($fd2)!=0){
-					$result = array('name'=>$value, 'what'=>"nofields");
+					$result = array('name'=>$value, 'what'=>"nofields", 'new'=>$fd1, 'drop' => $fd2);
 					break;
 				}
-				$diff = getDiff($value,$fieldsDB2,$index,$db2,$conn,0,10);
+				$diff = getDiff($value,$fieldsDB2,$index,$db2,$conn,$offset,$range);
 				if(count($diff)!=0){
 					$result = array('fields'=>$fieldsDB2, 'diff'=>$diff,'what'=>"diff");
 				}

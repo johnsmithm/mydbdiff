@@ -94,33 +94,10 @@ function getEditDistance(a, b) {
 }
 
  function showText(obj){
-    //alert("todo: use small cost edit algorithm!");
     var a = $(obj).next().html();
-    var b = a.split("###");
-   /* var base = difflib.stringAsLines(b[0]);
-    var newtxt = difflib.stringAsLines(b[1]);
-
-    // create a SequenceMatcher instance that diffs the two sets of lines
-    var sm = new difflib.SequenceMatcher(base, newtxt);
-
-    // get the opcodes from the SequenceMatcher instance
-    // opcodes is a list of 3-tuples describing what changes should be made to the base text
-    // in order to yield the new text
-    var opcodes = sm.get_opcodes();
-    var contextSize = null;*/
-
-    // build the diff view and add it to the current DOM
-    $("#dialogText")/*.html(diffview.buildView({
-        baseTextLines: base,
-        newTextLines: newtxt,
-        opcodes: opcodes,
-        // set the display titles for each resource
-        baseTextName: "Base Text",
-        newTextName: "New Text",
-        contextSize: contextSize,
-        viewType: true ? 1 : 0
-    }))*/.empty().append(getEditDistance(b[0],b[1]));
-    $( "#dialogText" ).dialog( "open" );
+    var b = a.split("###");  
+    $("#dialogText").empty().append(getEditDistance(b[0],b[1]));
+    $( "#dialogText" ).dialog('option', 'title', $(obj).attr('fieldname')).dialog( "open" );
  }
  function makeTable(diff){
 	 console.log(diff);
@@ -135,7 +112,7 @@ function getEditDistance(a, b) {
 		for(var i=0;i<diff['fields'].length;++i){      
 			var a = diff['diff'][j][diff['fields'][i]], b = diff['diff'][j]['b'+diff['fields'][i]];
       if((typeof a === 'string' || a instanceof String) && (a.length>100 || b.length>100)){
-        var aa="<span onclick='showText(this)' style='color:"+(a!=b?"red":"blue")+";cursor:pointer;'>view</span>";
+        var aa="<span onclick='showText(this)' fieldname='"+diff['fields'][i]+"' style='color:"+(a!=b?"red":"blue")+";cursor:pointer;'>view</span>";
         aa+= "<span style='display:none;'>" +a+"###" + b + "</span>";
         a = aa;
       }else	if(a!=b)
@@ -148,9 +125,42 @@ function getEditDistance(a, b) {
 	 return table;
  }
  
+ function showFields(diff){
+	 var table = $('<table>').attr('border','1');
+	 var tr = $('<tr>');
+	 tr.append($('<th>').text("Fieldname"));
+	 tr.append($('<th>').text("Option"));
+	 table.append(tr);
+	 for(var j=0;j<diff['new'].length;++j){
+		var tr = $('<tr>');
+		
+		var a='<span style="color:green">'+diff['new'][j]+'</span>';
+		tr.append($('<td>').html(a));
+		
+		tr.append($('<td>').html("<input type='checkbox' checked='checked' onclick=''>"));
+		table.append(tr);
+	 }
+	 for(var j=0;j<diff['drop'].length;++j){
+		var tr = $('<tr>');
+		
+		var a='<span style="color:red">'+diff['drop'][j]+'</span>';
+		tr.append($('<td>').html(a));
+		
+		tr.append($('<td>').html("<input type='checkbox' checked='checked' onclick=''>"));
+		table.append(tr);
+	 }
+	 return table;
+ }
+ 
+ function nextPage(obj){
+	 var name = $(obj).attr('tableName');
+	 var s = $('<p>').text(name);
+	 showTableDiff(s);
+ }
+ 
  function showTableDiff(obj){
 	  var name = $(obj).text();
-	  
+	  console.log(name);
 		var data = {};
 		data['user']     = "root";
 		data['table']     = name;
@@ -159,6 +169,15 @@ function getEditDistance(a, b) {
         data['db2']      = "dev2";
         data['host']     = "192.168.148.199";
 		data['action']='diffTable';
+		data['offset']=0;
+		data['range']=10;
+		if($( "#dialog" ).find('input[name=pager]').length>0 && $( "#dialog" ).find('input[name=pager]').val()!=0){
+			var a = $( "#dialog" ).find('input[name=pager]').val().split('-');
+			if(a.length==2){
+				data['offset']=a[0];
+				data['range']=a[1];				
+			}
+		}
 	  $.ajax({
           type: "GET",
           url: urlGlobal,
@@ -166,12 +185,17 @@ function getEditDistance(a, b) {
           success: function(diff){
             diff = JSON.parse(diff);
             console.log(diff); 
-			      $( "#dialog" ).html(diff['what'] == 'diff'? makeTable(diff):diff['what']);	
+			if(diff['what']=='nothing'){
+				alert('no records!');
+				return;
+			}
+			$( "#dialog" ).html(diff['what'] == 'diff'? makeTable(diff):showFields(diff));	
+			$( "#dialog" ).prepend('<p>range:'+data['range']+'; offset:'+data['offset']+'</p>');
             $( "#dialog" ).append('<input type="text" name="pager">');
-            $( "#dialog" ).append('<button onclick="makeSqlFile();" id="button">Next</button>');
+            $( "#dialog" ).append('<button onclick="nextPage(this);" tableName="'+name+'" id="button">Next</button>');
             $( "#dialog" ).append('<button onclick="makeSqlFile();" id="button">Make sql file - all</button>');
             $( "#dialog" ).append('<button onclick="makeSqlFile();" id="button">Make sql file - current</button>');
-            $( "#dialog" ).attr('title',name).dialog( "open" );
+            $( "#dialog" ).dialog('option', 'title', name).dialog( "open" );
           }
         });
   }
@@ -270,5 +294,4 @@ $( document ).ready(function() {
 			}
 		]
 	});
-  console.log(getEditDistance("abcaionel","abbionel"));
 });
