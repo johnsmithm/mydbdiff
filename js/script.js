@@ -1,5 +1,5 @@
-  var urlGlobal = "http://192.168.148.199/mediathek/mydbdiff/function.php";
-  var data = {};
+  var urlGlobal = "http://localhost/mydbdiff/function.php";
+  var data = {}, fileName = "dev.sql";
  // Compute the edit distance between the two given strings
 function getEditDistance(a, b) {
 	console.log(a.length);
@@ -204,7 +204,7 @@ function getEditDistance(a, b) {
 	  data['table'] = table;  
 	  data['offset']=0;
 	  data['range']=10;
-	  data['fileName']='dev1-dev2.sql';
+	  data['fileName']=fileName;
 	  $.ajax({
           type: "GET",
           url: urlGlobal,
@@ -214,7 +214,7 @@ function getEditDistance(a, b) {
             console.log(tables);         
             if(tables != "")   {
 				var nr = 1;
-				if(tables['what']!='table' || tables['what']!='field' ){
+				if(tables['what']!='table' && tables['what']!='field' ){
 					nr = tables['what'].split(':')[2];
 					console.log(nr);
 				}
@@ -229,7 +229,11 @@ function getEditDistance(a, b) {
 								  // todo: do not close when we do not end the batch! $("body").find();
 								  $("body").addClass("loading");    
 								  },
-							  complete: function() {   $("body").removeClass("loading");  } 
+							  complete: function() {  
+                 $("body").removeClass("loading"); 
+                 alert(table+" was added to sql file "+fileName+" !!!");
+                 $("ul#checkboxList span[tableClass="+table+"]").css("color","green");
+                 } 
 						});
 						data['offset']+=10;
 					}
@@ -246,7 +250,7 @@ function getEditDistance(a, b) {
 $( document ).ready(function() {
  
   function addList(ac, table, what){
-  	var span = "<span onclick='showTableDiff(this)' style='color:blue;cursor:pointer'>"+
+  	var span = "<span onclick='showTableDiff(this)' tableClass='"+table+"' style='color:blue;cursor:pointer'>"+
     table+"</span>";
   	var div = $("<div>").append('<input class="checkallInsideTable" checked="cheched" type="checkbox" name="'
   		+table+'checkallname"" id="'
@@ -277,12 +281,13 @@ $( document ).ready(function() {
 
 
   $("input[name=data]").click(function(){
-  	    data['action']='tables';
+  	  data['action']='tables';
   		data['user']     = $("input[name=user]").val();
   		data['password'] = $("input[name=password]").val();
   		data['db1']      = $("input[name=db1]").val();
   		data['db2']      = $("input[name=db2]").val();
-  		data['host']     = $("input[name=host]").val();
+  		data['host']     = $("input[name=host]").val();      
+      data['fileName'] = fileName;
 
       if(data['host'] == ""){
         data['user']     = "root";

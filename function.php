@@ -13,6 +13,10 @@
 		return $tables;
 	}
 
+	function getIndex($fields, $table, $db, $conn){
+
+	}
+
 	function getFields($table,$db,$conn){
 		$possibleIndex = array('rid','id','uuid','entity_id','uid');
 		$fields = array();
@@ -178,6 +182,11 @@
 		break;
 		case 'tables':
 			$result = getTables($db1,$conn);
+			$path = 'diff/'.$_REQUEST['fileName'];
+			$sql = 'SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\nSET time_zone = \"+00:00\"; \n -- Diff data';
+			exec("echo \"$sql\" > $path");
+			exec("echo \"\n\" >> $path");
+
 		break;
 		case "table":
 				$tablesDB2 = getTables($db2,$conn);
@@ -237,8 +246,10 @@
 				$tablesDB2 = getTables($db2,$conn);
 				if(!in_array($value, $tablesDB2)){					
 					$sql = addcslashes  (getCreateTable($value,$conn),"`");
-								
-					exec("echo \"$sql\" > $path");
+					
+					exec("echo \"-- Creating the table $value\" >> $path");			
+					exec("echo \"$sql;\" >> $path");
+					exec("echo \"\n\" >> $path");
 					break;
 				}
 				list($index,$fieldsDB1) = getFields($value,$db1,$conn);
