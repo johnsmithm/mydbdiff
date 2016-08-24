@@ -217,6 +217,32 @@
 					$result = array('fields'=>$fieldsDB2, 'diff'=>$diff,'what'=>"diff");
 				}
 		break;
+		case "tableDiffExport":
+				$value = $_REQUEST['table'];
+				$offset =  $_REQUEST['offset'];
+				$range =  $_REQUEST['range'];
+				$result = array('what'=>"nothing");
+				$path = 'diffFiles/'.$_REQUEST['fileName'];
+				
+				if(!in_array($value, $tablesDB2)){					
+					list($index,$fieldsDB1) = getFields($value,$db1,$conn);
+					$result = array('name'=>$value, 'what'=>"notable", 'new'=>$fieldsDB1, 'drop' => array());
+					break;
+				}
+				list($index,$fieldsDB1) = getFields($value,$db1,$conn);
+				list($index,$fieldsDB2) = getFields($value,$db2,$conn);		
+					
+				$fd1 = array_diff($fieldsDB1,$fieldsDB2);
+				$fd2 = array_diff($fieldsDB2,$fieldsDB1);
+				if(count($fd1) != 0 || count($fd2)!=0){
+					$result = array('name'=>$value, 'what'=>"nofields", 'new'=>$fd1, 'drop' => $fd2);
+					break;
+				}
+				$diff = getDiff($value,$fieldsDB2,$index,$db2,$conn,$offset,$range);
+				if(count($diff)!=0){
+					$result = array('fields'=>$fieldsDB2, 'diff'=>$diff,'what'=>"diff");
+				}
+		break;
 	}
 
 	$conn->close();

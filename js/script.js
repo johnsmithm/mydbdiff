@@ -1,5 +1,5 @@
   var urlGlobal = "http://192.168.148.199/mediathek/mydbdiff/function.php";
- 
+  var data = {};
  // Compute the edit distance between the two given strings
 function getEditDistance(a, b) {
 	console.log(a.length);
@@ -94,10 +94,12 @@ function getEditDistance(a, b) {
 }
 
  function showText(obj){
+	$("body").addClass("loading");
     var a = $(obj).next().html();
     var b = a.split("###");  
     $("#dialogText").empty().append(getEditDistance(b[0],b[1]));
     $( "#dialogText" ).dialog('option', 'title', $(obj).attr('fieldname')).dialog( "open" );
+	$("body").removeClass("loading");
  }
  function makeTable(diff){
 	 console.log(diff);
@@ -161,14 +163,8 @@ function getEditDistance(a, b) {
  function showTableDiff(obj){
 	  var name = $(obj).text();
 	  console.log(name);
-		var data = {};
-		data['user']     = "root";
-		data['table']     = name;
-        data['password'] = "password";
-        data['db1']      = "dev1";
-        data['db2']      = "dev2";
-        data['host']     = "192.168.148.199";
 		data['action']='diffTable';
+		data['table']=name;
 		data['offset']=0;
 		data['range']=10;
 		if($( "#dialog" ).find('input[name=pager]').length>0 && $( "#dialog" ).find('input[name=pager]').val()!=0){
@@ -193,11 +189,54 @@ function getEditDistance(a, b) {
 			$( "#dialog" ).prepend('<p>range:'+data['range']+'; offset:'+data['offset']+'</p>');
             $( "#dialog" ).append('<input type="text" name="pager">');
             $( "#dialog" ).append('<button onclick="nextPage(this);" tableName="'+name+'" id="button">Next</button>');
-            $( "#dialog" ).append('<button onclick="makeSqlFile();" id="button">Make sql file - all</button>');
+            $( "#dialog" ).append('<button onclick="makeSqlFileAll(this);" tableName="'+name+'" id="button">Make sql file - all</button>');
             $( "#dialog" ).append('<button onclick="makeSqlFile();" id="button">Make sql file - current</button>');
             $( "#dialog" ).dialog('option', 'title', name).dialog( "open" );
-          }
+          },
+		  beforeSend: function() { $("body").addClass("loading");    },
+		  complete: function() { $("body").removeClass("loading");  } 
         });
+  }
+  
+  function makeSqlFileAll(obj){
+	  var table = $(obj).attr('tableName');
+	  data['action'] = 'table';
+	  data['table'] = table;  
+	  data['offset']=0;
+	  data['range']=10;
+	  data['fileName']='dev1-dev2.sql';
+	  $.ajax({
+          type: "GET",
+          url: urlGlobal,
+          data: data,
+          success: function(tables){
+            tables = JSON.parse(tables);
+            console.log(tables);         
+            if(tables != "")   {
+				var nr = 1;
+				if(tables['what']!='table' || tables['what']!='field' ){
+					nr = tables['what'].split(':')[2];
+					console.log(nr);
+				}
+					data['action'] = 'tableDiffExport';
+					for(var i=0;i<nr;i+=10){
+						$.ajax({
+							  type: "GET",
+							  url: urlGlobal,
+							  data: data,
+							  success: function(result){},
+							  beforeSend: function() {
+								  // todo: do not close when we do not end the batch! $("body").find();
+								  $("body").addClass("loading");    
+								  },
+							  complete: function() {   $("body").removeClass("loading");  } 
+						});
+						data['offset']+=10;
+					}
+				
+            }
+          }
+      });
   }
 
   function makeSqlFile(){
@@ -238,7 +277,7 @@ $( document ).ready(function() {
 
 
   $("input[name=data]").click(function(){
-  		var data={'action':'tables'};
+  	    data['action']='tables';
   		data['user']     = $("input[name=user]").val();
   		data['password'] = $("input[name=password]").val();
   		data['db1']      = $("input[name=db1]").val();
