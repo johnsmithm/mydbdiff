@@ -45,6 +45,17 @@
 			$fields[]=$v;
 		return array($index,$fields);
 	}
+	
+	function getCreateTable($table,$conn){
+		$sql = "SHOW CREATE TABLE $table";
+		$result = $conn->query($sql);
+		if ($result->num_rows > 0) {			
+		    while($row = $result->fetch_assoc()) {
+		    	return $row['Create Table'];				
+		    }
+		}
+		return null;
+	}
 
 	function getDiff($table, $fields, $index, $db2, $conn,$offset, $limit){
 		//todo: find drop and new rows
@@ -222,11 +233,12 @@
 				$offset =  $_REQUEST['offset'];
 				$range =  $_REQUEST['range'];
 				$result = array('what'=>"nothing");
-				$path = 'diffFiles/'.$_REQUEST['fileName'];
-				
+				$path = 'diff/'.$_REQUEST['fileName'];
+				$tablesDB2 = getTables($db2,$conn);
 				if(!in_array($value, $tablesDB2)){					
-					list($index,$fieldsDB1) = getFields($value,$db1,$conn);
-					$result = array('name'=>$value, 'what'=>"notable", 'new'=>$fieldsDB1, 'drop' => array());
+					$sql = addcslashes  (getCreateTable($value,$conn),"`");
+								
+					exec("echo \"$sql\" > $path");
 					break;
 				}
 				list($index,$fieldsDB1) = getFields($value,$db1,$conn);
