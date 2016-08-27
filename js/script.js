@@ -113,7 +113,8 @@ function getEditDistance(a, b) {
 		 var tr = $('<tr>');
 		for(var i=0;i<diff['fields'].length;++i){      
 			var a = diff['diff'][j][diff['fields'][i]], b = diff['diff'][j]['b'+diff['fields'][i]];
-      if((typeof a === 'string' || a instanceof String) && (a.length>100 || b.length>100)){
+      if((typeof a === 'string' || a instanceof String) && (typeof b === 'string' || b instanceof String)
+       && (a.length>100 || b.length>100)){
         var aa="<span onclick='showText(this)' fieldname='"+diff['fields'][i]+"' style='color:"+(a!=b?"red":"blue")+";cursor:pointer;'>view</span>";
         aa+= "<span style='display:none;'>" +a+"###" + b + "</span>";
         a = aa;
@@ -291,10 +292,10 @@ $( document ).ready(function() {
 
       if(data['host'] == ""){
         data['user']     = "root";
-        data['password'] = "password";
-        data['db1']      = "dev1";
-        data['db2']      = "dev2";
-        data['host']     = "192.168.148.199";
+        data['password'] = "123456";
+        data['db1']      = "d7";//life
+        data['db2']      = "d7-copy";//dev
+        data['host']     = "localhost";
       }
 
       console.log(data);

@@ -14,6 +14,10 @@
 	}
 
 	function getIndex($fields, $table, $db, $conn){
+		//find primary and unique and autoicriment
+			//add a sort criteria auto>primary>unique>hasID>others
+				// loop over
+					//if the index is unique in both table take is as index!!!
 
 	}
 
@@ -68,14 +72,19 @@
 		$diff = array();
 		$condition = array();
 		$notCondition = array();
-		$select = '';
+		$select = '';$selectA="";$selectB="";
 		foreach($fields as $i=>$field){
 			if($field!=$index)
-				$condition[] = "a.$field!=b.$field ";
-			$notCondition[] = "b.$field=aa.$field ";
-			$select .= "a.$field , b.$field AS b$field";
-			if($i<count($fields)-1)
+				$condition[] = "COALESCE(a.$field,'')!=COALESCE(b.$field,'') ";
+			$notCondition[] = "COALESCE(b.$field,'')=COALESCE(aa.$field,'') ";
+			$select .= " b.$field AS b$field, a.$field ";
+			$selectA .= " '' AS b$field, aaa.$field";
+			$selectB .= " bbb.$field AS b$field, '' AS $field";
+			if($i<count($fields)-1){
 				$select .= ', ';
+				$selectA .= ', ';
+				$selectB .= ', ';
+			}
 		}
 		if(count($condition)!=0){
 			$condition = '('.implode(" OR ", $condition).")";
@@ -89,8 +98,11 @@
 		$limitString = " LIMIT $limit OFFSET $offset";
 		if($limit == 0){
 			$limitString = "";
-			$select = " COUNT(*) AS mediathekTableRowsNumber ";
+			$select = " COUNT(a.$index) AS mediathekTableRowsNumber ";
+			$selectA = " COUNT(aaa.$index) AS mediathekTableRowsNumber ";
+			$selectB = " COUNT(bbb.$index) AS mediathekTableRowsNumber ";
 		}
+		//changed
 		$sql = "
 	    SELECT $select
 	    FROM   $table a, `$db2`.`$table` b
@@ -98,6 +110,43 @@
 		NOT EXISTS  (SELECT * FROM  `$table` aa WHERE  $notCondition LIMIT 1)  AND
 		NOT EXISTS  (SELECT * FROM  `$db2`.`$table` bb WHERE  $notConditionB LIMIT 1) $limitString
 		";
+
+		$notConditionA = str_replace('aa.','aaa.',str_replace('b.','bb1.',$notCondition));
+		$notConditionA1 = str_replace('aa.','aaa.',str_replace('b.','a.',$notCondition));
+		//new
+		$sqlA = "
+		SELECT  $selectA
+		FROM  $table AS aaa 
+		WHERE (NOT EXISTS (SELECT bb1.$index FROM  `$db2`.`$table` AS bb1 WHERE  $notConditionA)) AND 
+		(NOT EXISTS (
+			SELECT a.$index
+		    FROM   $table AS a, `$db2`.`$table` AS b
+		    WHERE  $condition AND a.$index = b.$index  
+		    AND $notConditionA1 AND
+			NOT EXISTS  (SELECT * FROM  $table AS aa WHERE  $notCondition LIMIT 1)  AND
+			NOT EXISTS  (SELECT * FROM  `$db2`.`$table` AS bb WHERE  $notConditionB LIMIT 1) LIMIT 1
+		)) $limitString 
+		";
+		
+		//echo $sqlA."<br/>";
+		$notConditionA = str_replace('aa.','aa1.',str_replace('b.','bbb.',$notCondition));
+		$notConditionA1 = str_replace('aa.','bbb.',str_replace('b.','b.',$notCondition));		
+		//drop
+		$sqlB = "
+		SELECT  $selectB
+		FROM $table aaa , `$db2`.`$table` bbb
+		WHERE NOT EXISTS (SELECT * FROM  `$table` aa1 WHERE  $notConditionA LIMIT 1) AND 
+		NOT EXISTS (
+			SELECT a.$index
+		    FROM   $table a, `$db2`.`$table` b
+		    WHERE  $condition AND a.$index = b.$index  
+		    AND $notConditionA1 AND
+			NOT EXISTS  (SELECT * FROM  `$table` aa WHERE  $notCondition LIMIT 1)  AND
+			NOT EXISTS  (SELECT * FROM  `$db2`.`$table` bb WHERE  $notConditionB LIMIT 1)LIMIT 1
+		) $limitString 
+		";//use grup by - for distinct rows
+
+		//echo $sqlB."<br/>";
 		//echo $index.'<br/>';
 		//echo $sql;
 		//return null;
@@ -106,25 +155,44 @@
 		if(count($fields)==1){
 			$sql = "SELECT $select
 	    FROM   $table a, `$db2`.`$table` b
-	    WHERE   a.$index = b.$index  ";
+	    WHERE   a.$index != b.$index  AND 
+	    NOT EXISTS  (SELECT * FROM  `$table` aa WHERE   aa.$index=b.$index LIMIT 1) AND 
+	    NOT EXISTS  (SELECT * FROM  `$db2`.`$table` bb WHERE  bb.$index=a.$index LIMIT 1)   ";
 		}
 		
-		$result = $conn->query($sql);
+		
 		if($limit == 0){
+			/*$result = $conn->query($sql);
 			$data = $result->fetch_assoc();
 			
 			if($data['mediathekTableRowsNumber'] != '0')
-				$diff[] = $data['mediathekTableRowsNumber'];
+				$diff[] = $data['mediathekTableRowsNumber'];*/
+
+			$result = $conn->query("( ".$sqlA." ) UNION  ( ".$sqlB.")  UNION (".$sql.")");
+			if ($result->num_rows > 0) {
+				$diff[0] = 0;
+			    while($row = $result->fetch_assoc()) {
+			    	$diff[0] += $row['mediathekTableRowsNumber'];
+					/*echo "<pre>";
+					print_r($row);
+					echo "</pre>";*/
+			    }
+			    if($diff[0] == 0){
+			    	$diff = array();
+			    }
+			}
 			
-		}else 
-		if ($result->num_rows > 0) {
-			
-		    while($row = $result->fetch_assoc()) {
-		    	$diff[] = $row;
-			/*	echo "<pre>";
-				print_r($row);
-				echo "</pre>"; */
-		    }
+		}else {
+			$result = $conn->query("( ".$sqlA." ) UNION  ( ".$sqlB.")  UNION (".$sql.")");
+			if ($result->num_rows > 0) {
+				
+			    while($row = $result->fetch_assoc()) {
+			    	$diff[] = $row;
+					/*echo "<pre>";
+					print_r($row);
+					echo "</pre>";*/ 
+			    }
+			}
 		}
 		return $diff;
 	}
@@ -132,8 +200,8 @@
 	$host = $_REQUEST["host"];
 	$user = $_REQUEST["user"];
 	$password = $_REQUEST["password"];
-	$db1 = $_REQUEST["db1"];//dev
-	$db2 = $_REQUEST["db2"];//life
+	$db1 = $_REQUEST["db1"];//life
+	$db2 = $_REQUEST["db2"];//dev2
 	
 
 	// Create connection

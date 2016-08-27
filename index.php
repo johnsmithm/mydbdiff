@@ -55,8 +55,8 @@ include("fucntion.php");
 	<label>Host</label><br/><input type="text" name ="host"><br/>
 	<label>User</label><br/><input type="text" name ="user"><br/>
 	<label>Password</label><br/><input type="text" name ="password"><br/>
-	<label>DB1</label><br/><input type="text" name ="db1"><br/>
-	<label>DB2</label><br/><input type="text" name ="db2"><br/>
+	<label>DB1-dev</label><br/><input type="text" name ="db1"><br/>
+	<label>DB2-life</label><br/><input type="text" name ="db2"><br/>
 	<p>Exclude tables, separates by comma<p/>
 	<textarea></textarea><br/>
 <!--	<input type="submit" name="str" value ="Get Structure diff">-->
