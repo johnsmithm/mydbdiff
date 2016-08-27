@@ -66,7 +66,7 @@
 	}
 
 	function getDiff($table, $fields, $index, $db2, $conn,$offset, $limit){
-		//todo: find drop and new rows
+	
 		if($index == '')
 			return null;
 		$diff = array();
@@ -108,7 +108,7 @@
 	    FROM   $table a, `$db2`.`$table` b
 	    WHERE  $condition AND a.$index = b.$index AND 
 		NOT EXISTS  (SELECT * FROM  `$table` aa WHERE  $notCondition LIMIT 1)  AND
-		NOT EXISTS  (SELECT * FROM  `$db2`.`$table` bb WHERE  $notConditionB LIMIT 1) $limitString
+		NOT EXISTS  (SELECT * FROM  `$db2`.`$table` bb WHERE  $notConditionB LIMIT 1) 
 		";
 
 		$notConditionA = str_replace('aa.','aaa.',str_replace('b.','bb1.',$notCondition));
@@ -125,7 +125,7 @@
 		    AND $notConditionA1 AND
 			NOT EXISTS  (SELECT * FROM  $table AS aa WHERE  $notCondition LIMIT 1)  AND
 			NOT EXISTS  (SELECT * FROM  `$db2`.`$table` AS bb WHERE  $notConditionB LIMIT 1) LIMIT 1
-		)) $limitString 
+		))
 		";
 		
 		//echo $sqlA."<br/>";
@@ -143,47 +143,50 @@
 		    AND $notConditionA1 AND
 			NOT EXISTS  (SELECT * FROM  `$table` aa WHERE  $notCondition LIMIT 1)  AND
 			NOT EXISTS  (SELECT * FROM  `$db2`.`$table` bb WHERE  $notConditionB LIMIT 1)LIMIT 1
-		) $limitString 
+		)  
 		";//use grup by - for distinct rows
 
 		//echo $sqlB."<br/>";
 		//echo $index.'<br/>';
 		//echo $sql;
 		//return null;
+
+		$bigSql = "SELECT * FROM (( ".$sqlA." ) UNION  ( ".$sqlB.")  UNION (".$sql.")) AS t $limitString";
+	
 		if(count($fields)==0)
 			return null;
-		if(count($fields)==1){
-			$sql = "SELECT $select
-	    FROM   $table a, `$db2`.`$table` b
-	    WHERE   a.$index != b.$index  AND 
-	    NOT EXISTS  (SELECT * FROM  `$table` aa WHERE   aa.$index=b.$index LIMIT 1) AND 
-	    NOT EXISTS  (SELECT * FROM  `$db2`.`$table` bb WHERE  bb.$index=a.$index LIMIT 1)   ";
-		}
+		if(count($fields)==1){		
 		
+			$sqlA = "SELECT $selectA
+		    FROM   $table aaa
+		    WHERE  NOT EXISTS  (SELECT * FROM  `$db2`.`$table` bbb1 WHERE   aaa.$index=bbb1.$index LIMIT 1) ";
+			
+			$sqlB="SELECT $selectB
+		    FROM   `$db2`.`$table` bbb
+		    WHERE  NOT EXISTS  (SELECT * FROM  `$table` aaa1 WHERE   aaa1.$index=bbb.$index LIMIT 1) 
+			
+		     ";
+
+		$bigSql = "SELECT * FROM (( ".$sqlA." ) UNION  ( ".$sqlB.") ) AS t $limitString";
+	
+		}
+		//echo $bigSql."<br/>";
 		
 		if($limit == 0){
-			/*$result = $conn->query($sql);
+			if(count($fields)==1)
+				$bigSql = "SELECT SUM(mediathekTableRowsNumber) AS mediathekTableRowsNumber1 FROM (( ".$sqlA." ) UNION  ( ".$sqlB.")) AS t $limitString";
+			else 
+				$bigSql = "SELECT SUM(mediathekTableRowsNumber) AS mediathekTableRowsNumber1 FROM (( ".$sqlA." ) UNION  ( ".$sqlB.")  UNION (".$sql.")) AS t $limitString";
+	
+			$result = $conn->query($bigSql);
 			$data = $result->fetch_assoc();
 			
-			if($data['mediathekTableRowsNumber'] != '0')
-				$diff[] = $data['mediathekTableRowsNumber'];*/
-
-			$result = $conn->query("( ".$sqlA." ) UNION  ( ".$sqlB.")  UNION (".$sql.")");
-			if ($result->num_rows > 0) {
-				$diff[0] = 0;
-			    while($row = $result->fetch_assoc()) {
-			    	$diff[0] += $row['mediathekTableRowsNumber'];
-					/*echo "<pre>";
-					print_r($row);
-					echo "</pre>";*/
-			    }
-			    if($diff[0] == 0){
-			    	$diff = array();
-			    }
-			}
-			
+			if($data['mediathekTableRowsNumber1'] != '0')
+				$diff[] = $data['mediathekTableRowsNumber1'];
+						
 		}else {
-			$result = $conn->query("( ".$sqlA." ) UNION  ( ".$sqlB.")  UNION (".$sql.")");
+			//echo 1;
+			$result = $conn->query($bigSql);
 			if ($result->num_rows > 0) {
 				
 			    while($row = $result->fetch_assoc()) {
@@ -332,6 +335,7 @@
 				$diff = getDiff($value,$fieldsDB2,$index,$db2,$conn,$offset,$range);
 				if(count($diff)!=0){
 					$result = array('fields'=>$fieldsDB2, 'diff'=>$diff,'what'=>"diff");
+					//make updates
 				}
 		break;
 	}

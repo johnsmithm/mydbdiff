@@ -1,4 +1,4 @@
-  var urlGlobal = "http://localhost/mydbdiff/function.php";
+  var urlGlobal = "function.php";
   var data = {}, fileName = "dev.sql";
  // Compute the edit distance between the two given strings
 function getEditDistance(a, b) {
@@ -214,30 +214,30 @@ function getEditDistance(a, b) {
             tables = JSON.parse(tables);
             console.log(tables);         
             if(tables != "")   {
-				var nr = 1;
-				if(tables['what']!='table' && tables['what']!='field' ){
-					nr = tables['what'].split(':')[2];
-					console.log(nr);
-				}
-					data['action'] = 'tableDiffExport';
-					for(var i=0;i<nr;i+=10){
-						$.ajax({
-							  type: "GET",
-							  url: urlGlobal,
-							  data: data,
-							  success: function(result){},
-							  beforeSend: function() {
-								  // todo: do not close when we do not end the batch! $("body").find();
-								  $("body").addClass("loading");    
-								  },
-							  complete: function() {  
-                 $("body").removeClass("loading"); 
-                 alert(table+" was added to sql file "+fileName+" !!!");
-                 $("ul#checkboxList span[tableClass="+table+"]").css("color","green");
-                 } 
-						});
-						data['offset']+=10;
-					}
+      				var nr = 1;
+      				if(tables['what']!='table' && tables['what']!='field' ){
+      					nr = tables['what'].split(':')[2];
+      					console.log(nr);
+      				}
+      					data['action'] = 'tableDiffExport';
+      					for(var i=0;i<nr;i+=10){
+      						$.ajax({
+      							  type: "GET",
+      							  url: urlGlobal,
+      							  data: data,
+      							  success: function(result){},
+      							  beforeSend: function() {
+      								  // todo: do not close when we do not end the batch! $("body").find();
+      								  $("body").addClass("loading");    
+      								  },
+      							  complete: function() {  
+                       $("body").removeClass("loading"); 
+                       alert(table+" was added to sql file "+fileName+" !!!");
+                       $("ul#checkboxList span[tableClass="+table+"]").css("color","green");
+                       } 
+      						});
+      						data['offset']+=10;
+      					}
 				
             }
           }
