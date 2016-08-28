@@ -314,7 +314,7 @@
 				$fd1 = array_diff($fieldsDB1,$fieldsDB2);
 				$fd2 = array_diff($fieldsDB2,$fieldsDB1);
 				if(count($fd1) != 0 || count($fd2)!=0){
-					$result = array('name'=>$value, 'what'=>"nofields", 'new'=>$fd1, 'drop' => $fd2);
+					$result = array('name'=>$value, 'what'=>"nofields", 'new'=>array_values($fd1), 'drop' => array_values($fd2));
 					break;
 				}
 				$diff = getDiff($value,$fieldsDB2,$index,$db2,$conn,$offset,$range);
@@ -346,15 +346,36 @@
 					exec("echo \"\n\" >> $path");
 					break;
 				}
-				//todo: drop table
+				
 				list($index,$fieldsDB1) = getFields($value,$db1,$conn);
 				list($index,$fieldsDB2) = getFields($value,$db2,$conn);		
 					
 				$fd1 = array_diff($fieldsDB1,$fieldsDB2);
 				$fd2 = array_diff($fieldsDB2,$fieldsDB1);
 				if(count($fd1) != 0 || count($fd2)!=0){
-					//todo: use table after add/drop column
+					// use table after add/drop column
 					$result = array('name'=>$value, 'what'=>"nofields", 'new'=>$fd1, 'drop' => $fd2);
+					if(count($fd1)){
+						$create = getCreateTable($value,$conn);
+						exec("echo \"-- Adding fields from table $value\n\" >> $path");
+						foreach($fd1 as $field){
+							$temp = explode($field.'`', $create);
+							$temp = explode(",", $temp[1]);
+							$datatype = $temp[0];
+							$sql = "ALTER TABLE $value ADD  $field $datatype";
+							if($datatype != "")
+								exec("echo \"$sql;\" >> $path");
+						}
+						exec("echo \"\n\" >> $path");
+					}
+					if(count($fd2)){
+						exec("echo \"-- Droping fields from table $value\n\" >> $path");
+						foreach($fd2 as $field){
+							$sql = "ALTER TABLE $value DROP COLUMN $field";
+							exec("echo \"$sql;\" >> $path");
+						}
+						exec("echo \"\n\" >> $path");
+					}
 					break;
 				}
 				$diff = getDiff($value,$fieldsDB2,$index,$db2,$conn,$offset,$range);
