@@ -252,7 +252,10 @@
 
 		break;
 		case 'tables':
-			$result = getTables($db1,$conn);
+			$db1Tables = getTables($db1,$conn);
+			$db2Tables = getTables($db2,$conn);
+			$diff = array_diff($db2Tables, $db1Tables);
+			$result = array_merge($db1Tables,$diff);
 			$path = 'diff/'.$_REQUEST['fileName'];
 			$sql = 'SET SQL_MODE = \"NO_AUTO_VALUE_ON_ZERO\";\nSET time_zone = \"+00:00\"; \n -- Diff data';
 			exec("echo \"$sql\" > $path");
@@ -263,7 +266,12 @@
 				$tablesDB2 = getTables($db2,$conn);
 				$value = $_REQUEST['table'];
 				if(!in_array($value, $tablesDB2)){
-					$result = array('name'=>$value, 'what'=>"table");
+					$result = array('name'=>$value, 'what'=>"NewTable");
+					break;
+				}
+				$tablesDB1 = getTables($db1,$conn);
+				if(!in_array($value, $tablesDB1)){
+					$result = array('name'=>$value, 'what'=>"DropTable");
 					break;
 				}
 				list($index,$fieldsDB1) = getFields($value,$db1,$conn);
@@ -285,6 +293,7 @@
 		break;
 		case "diffTable" :
 				$tablesDB2 = getTables($db2,$conn);
+				$tablesDB1 = getTables($db1,$conn);
 				$value = $_REQUEST['table'];
 				$offset =  $_REQUEST['offset'];
 				$range =  $_REQUEST['range'];
@@ -292,6 +301,11 @@
 				if(!in_array($value, $tablesDB2)){					
 					list($index,$fieldsDB1) = getFields($value,$db1,$conn);
 					$result = array('name'=>$value, 'what'=>"notable", 'new'=>$fieldsDB1, 'drop' => array());
+					break;
+				}
+				if(!in_array($value, $tablesDB1)){					
+					list($index,$fieldsDB2) = getFields($value,$db2,$conn);
+					$result = array('name'=>$value, 'what'=>"notable", 'drop'=>$fieldsDB2, 'new' => array());
 					break;
 				}
 				list($index,$fieldsDB1) = getFields($value,$db1,$conn);
@@ -314,11 +328,20 @@
 				$range =  $_REQUEST['range'];
 				$result = array('what'=>"nothing");
 				$path = 'diff/'.$_REQUEST['fileName'];
-				$tablesDB2 = getTables($db2,$conn);
+				$tablesDB2 = getTables($db2,$conn);				
+				$tablesDB1 = getTables($db1,$conn);
 				if(!in_array($value, $tablesDB2)){					
 					$sql = addcslashes  (getCreateTable($value,$conn),"`");
 					
 					exec("echo \"-- Creating the table $value\n\" >> $path");			
+					exec("echo \"$sql;\" >> $path");
+					exec("echo \"\n\" >> $path");
+					break;
+				}
+				if(!in_array($value, $tablesDB1)){					
+					$sql = "DROP TABLE $value";
+					
+					exec("echo \"-- Droping the table $value\n\" >> $path");			
 					exec("echo \"$sql;\" >> $path");
 					exec("echo \"\n\" >> $path");
 					break;

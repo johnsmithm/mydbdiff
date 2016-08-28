@@ -215,7 +215,7 @@ function getEditDistance(a, b) {
             console.log(tables);         
             if(tables != "")   {
       				var nr = 1;
-      				if(tables['what']!='table' && tables['what']!='field' ){
+      				if(tables['what']!='NewTable' && tables['what']!='DropTable' && tables['what']!='field' ){
       					nr = tables['what'].split(':')[2];
       					console.log(nr);
       				}
