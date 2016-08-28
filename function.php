@@ -18,7 +18,7 @@
 			//add a sort criteria auto>primary>unique>hasID>others
 				// loop over
 					//if the index is unique in both table take is as index!!!
-
+		//use show index from tablename
 	}
 
 	function getFields($table,$db,$conn){
@@ -318,24 +318,72 @@
 				if(!in_array($value, $tablesDB2)){					
 					$sql = addcslashes  (getCreateTable($value,$conn),"`");
 					
-					exec("echo \"-- Creating the table $value\" >> $path");			
+					exec("echo \"-- Creating the table $value\n\" >> $path");			
 					exec("echo \"$sql;\" >> $path");
 					exec("echo \"\n\" >> $path");
 					break;
 				}
+				//todo: drop table
 				list($index,$fieldsDB1) = getFields($value,$db1,$conn);
 				list($index,$fieldsDB2) = getFields($value,$db2,$conn);		
 					
 				$fd1 = array_diff($fieldsDB1,$fieldsDB2);
 				$fd2 = array_diff($fieldsDB2,$fieldsDB1);
 				if(count($fd1) != 0 || count($fd2)!=0){
+					//todo: use table after add/drop column
 					$result = array('name'=>$value, 'what'=>"nofields", 'new'=>$fd1, 'drop' => $fd2);
 					break;
 				}
 				$diff = getDiff($value,$fieldsDB2,$index,$db2,$conn,$offset,$range);
 				if(count($diff)!=0){
 					$result = array('fields'=>$fieldsDB2, 'diff'=>$diff,'what'=>"diff");
-					//make updates
+					echo getIndex($fieldsDB1, $value, $db2, $conn);
+					//make updates, using the fields that are not changed or just the 100% unique index
+					//todo: use just index, process special characters
+					exec("echo \"-- Updating the table $value\n\" >> $path");
+					foreach($diff as $d){
+						$where = array();
+						$update = array();
+						$insert = array();
+						foreach ($fieldsDB1 as $val) {
+							//procces fields
+							$d[$val] = addslashes($d[$val]);
+							$d[$val] = ereg_replace("\n","\\n",$d[$val]);
+							if (!isset($d[$val])) 
+									{ $d[$val] = '\"\"' ; }
+							$d['b'.$val] = addslashes($d['b'.$val]);
+							$d['b'.$val] = ereg_replace("\n","\\n",$d['b'.$val]);
+							if (!isset($d['b'.$val])) 
+									{ $d['b'.$val] = '\"\"' ; }
+
+							if($d[$val]==$d['b'.$val])
+								$where[] = "$val=\"".$d[$val]."\"";
+							else {
+								if($d[$val] != "")
+									$update[] = "$val='".$d[$val]."'";
+								else
+									$update[] = "$val=\"".$d['b'.$val]."\"";
+								$insert[] = $d[$val];
+							}
+						}
+					
+						$whereSql = implode(" AND ", $where);
+						$updateSql = implode(" , ", $update);
+						if(count($where)!=0 && count($update)!=0)
+							$sql = "UPDATE `$value` SET $updateSql WHERE $whereSql LIMIT 1";
+						elseif (count($where)==0 && $d['b'.$index]=="") {
+							$fieldSQL = implode("`,`", $fieldsDB1);
+							$insertSQL = implode(",", $insert);
+							$sql = "INSERT `$value` (`$fieldSQL`) VALUES ($insertSQL)";
+						}else{
+							$whereSql = implode(" AND ", $update);
+							$sql = "DELETE FROM `$value` WHERE $whereSql LIMIT 1";
+						}
+						echo $sql."<br />";
+						$sql = addcslashes  ($sql,"`");
+						exec("echo \"$sql;\" >> $path");
+					}
+					exec("echo \"\n\" >> $path");
 				}
 		break;
 	}
