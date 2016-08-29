@@ -1,5 +1,6 @@
   var urlGlobal = "function.php";
   var data = {}, fileName = "dev.sql";
+  var ignoreTables = [];
  // Compute the edit distance between the two given strings
 function getEditDistance(a, b) {
 	console.log(a.length);
@@ -190,8 +191,8 @@ function getEditDistance(a, b) {
 			$( "#dialog" ).prepend('<p>range:'+data['range']+'; offset:'+data['offset']+'</p>');
             $( "#dialog" ).append('<input type="text" name="pager">');
             $( "#dialog" ).append('<button onclick="nextPage(this);" tableName="'+name+'" id="button">Next</button>');
-            $( "#dialog" ).append('<button onclick="makeSqlFileAll(this);" tableName="'+name+'" id="button">Make sql file - all</button>');
-            $( "#dialog" ).append('<button onclick="makeSqlFile();" id="button">Make sql file - current</button>');
+            $( "#dialog" ).append('<button onclick="makeSqlFileAll(this,0);" tableName="'+name+'" id="button">Make sql file - all</button>');
+            $( "#dialog" ).append('<button onclick="makeSqlFileAll(this,1);" id="button">Make sql file - current</button>');
             $( "#dialog" ).dialog('option', 'title', name).dialog( "open" );
           },
 		  beforeSend: function() { $("body").addClass("loading");    },
@@ -199,13 +200,17 @@ function getEditDistance(a, b) {
         });
   }
   
-  function makeSqlFileAll(obj){
+  function makeSqlFileAll(obj,type){
 	  var table = $(obj).attr('tableName');
 	  data['action'] = 'table';
 	  data['table'] = table;  
 	  data['offset']=0;
 	  data['range']=10;
 	  data['fileName']=fileName;
+    if(type==1){
+      alert("get range");
+      return;
+    }
 	  $.ajax({
           type: "GET",
           url: urlGlobal,
@@ -220,7 +225,7 @@ function getEditDistance(a, b) {
       					console.log(nr);
       				}
       					data['action'] = 'tableDiffExport';
-      					for(var i=0;i<nr;i+=10){
+      					for(var i=0;i<nr;i+=10){//todo:recoursive
       						$.ajax({
       							  type: "GET",
       							  url: urlGlobal,
@@ -232,7 +237,8 @@ function getEditDistance(a, b) {
       								  },
       							  complete: function() {  
                        $("body").removeClass("loading"); 
-                       alert(table+" was added to sql file "+fileName+" !!!");
+                       if(type != 2)
+                        alert(table+" was added to sql file "+fileName+" !!!");
                        $("ul#checkboxList span[tableClass="+table+"]").css("color","green");
                        } 
       						});
@@ -244,8 +250,23 @@ function getEditDistance(a, b) {
       });
   }
 
-  function makeSqlFile(){
-    alert("todo");
+  function makeSqlFile(type){
+    var tableNames="";
+    $("ul#checkboxList input[type=checkbox]").each(function(index){
+      if($(this).is(":checked")){
+        var name = $(this).attr("name").split("checkallname")[0];
+        console.log(name);
+        if(type==0){
+          tableNames += name+",";
+        }else{
+          var obj = $("p").attr("tableName",name);
+          //todo: recoursive
+          //makeSqlFileAll(obj,2);
+        }
+      }
+    });
+    if(type==0)
+      window.prompt("Copy to clipboard: Ctrl+C, Enter", tableNames);
   }
 
 $( document ).ready(function() {
@@ -260,7 +281,27 @@ $( document ).ready(function() {
   	return ac;
   }
 
+  function ignoreTable(table){
+    if(jQuery.inArray( table, ignoreTables )!=-1)
+      return true;
+    for(var i=0;i<ignoreTables.length;++i){
+      if(ignoreTables[i][ignoreTables[i].length-1]=='*'){
+        var tableI = ignoreTables[i].split("*")[0];
+        
+        if(table.search(tableI)==0)
+          return true;
+      }
+    }
+    return false;
+  }
+
   function recursiveDiff(counter,tablesD,ac,data){
+    if(ignoreTable( tablesD[counter])){
+      ++counter;
+      if(counter<tablesD.length && counter<1000)  
+              recursiveDiff(counter,tablesD,ac,data);
+      return;
+    }
     data['action'] = 'table';
     data['table'] = tablesD[counter];
     counter++;
@@ -289,6 +330,10 @@ $( document ).ready(function() {
   		data['db2']      = $("input[name=db2]").val();
   		data['host']     = $("input[name=host]").val();      
       data['fileName'] = fileName;
+      if($('textarea').val()!=""){
+        ignoreTables = $('textarea').val().split(',');
+        console.log(ignoreTables);
+      }
 
       if(data['host'] == ""){
         data['user']     = "root";
@@ -315,7 +360,8 @@ $( document ).ready(function() {
               recursiveDiff(counter,tablesD,ac,data);
             }
             console.log(tablesD.length);           
-            $("#contentTable").append('<button onclick="makeSqlFile();" id="button">Make sql file</button>');
+            $("#contentTable").append('<button onclick="makeSqlFile(1);" id="button">Make sql file</button>');
+            $("#contentTable").append('<button onclick="makeSqlFile(0);" id="button">Get tables names</button>');
           }
         });
   });

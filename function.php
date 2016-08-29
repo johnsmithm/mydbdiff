@@ -393,21 +393,21 @@
 							//procces fields
 							$d[$val] = addslashes($d[$val]);
 							$d[$val] = ereg_replace("\n","\\n",$d[$val]);
-							if (!isset($d[$val])) 
-									{ $d[$val] = '\"\"' ; }
+							//if (!isset($d[$val]) || !isset($d[$val])) 
+							//		{ $d[$val] = "''" ; }
 							$d['b'.$val] = addslashes($d['b'.$val]);
 							$d['b'.$val] = ereg_replace("\n","\\n",$d['b'.$val]);
-							if (!isset($d['b'.$val])) 
-									{ $d['b'.$val] = '\"\"' ; }
+							//if (!isset($d['b'.$val]) || $d['b'.$val] == '') 
+							//		{ $d['b'.$val] = "''" ; }
 
 							if($d[$val]==$d['b'.$val])
-								$where[] = "$val=\"".$d[$val]."\"";
+								$where[] = "$val='".$d[$val]."'";
 							else {
 								if($d[$val] != "")
 									$update[] = "$val='".$d[$val]."'";
 								else
-									$update[] = "$val=\"".$d['b'.$val]."\"";
-								$insert[] = $d[$val];
+									$update[] = "$val='".$d['b'.$val]."'";
+								$insert[] = ($d[$val]==""?"''":$d[$val]);
 							}
 						}
 					
@@ -415,7 +415,7 @@
 						$updateSql = implode(" , ", $update);
 						if(count($where)!=0 && count($update)!=0)
 							$sql = "UPDATE `$value` SET $updateSql WHERE $whereSql LIMIT 1";
-						elseif (count($where)==0 && $d['b'.$index]=="") {
+						elseif (count($insert)!=0 && (!isset($d['b'.$val]) || $d['b'.$val] == '')) {
 							$fieldSQL = implode("`,`", $fieldsDB1);
 							$insertSQL = implode(",", $insert);
 							$sql = "INSERT `$value` (`$fieldSQL`) VALUES ($insertSQL)";
@@ -425,6 +425,7 @@
 						}
 						echo $sql."<br />";
 						$sql = addcslashes  ($sql,"`");
+						//$sql = addcslashes  ($sql,"'");
 						exec("echo \"$sql;\" >> $path");
 					}
 					exec("echo \"\n\" >> $path");

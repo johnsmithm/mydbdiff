@@ -57,9 +57,11 @@ include("fucntion.php");
 	<label>DB1-dev(from)</label><br/><input type="text" name ="db1"><br/>
 	<label>DB2-life(to)</label><br/><input type="text" name ="db2"><br/>
 	<p>Exclude tables, separates by comma<p/>
-	<textarea></textarea><br/>
+	<textarea name="ignore"></textarea><br/>
 <!--	<input type="submit" name="str" value ="Get Structure diff">-->
 	<input type="submit" name="data" value ="Get Data diff">
+	
+
 </div>
 
 
