@@ -191,7 +191,7 @@
 		}else {
 			//echo 1;
 			//echo $sqlB."<br/>";
-			$result = $conn->query($sqlB);
+			$result = $conn->query($bigSql);
 			if ($result->num_rows > 0) {
 				
 			    while($row = $result->fetch_assoc()) {
