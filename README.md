@@ -12,10 +12,12 @@ Also the app writes a sql file (diff/dev.sql) using exec command. sql file could
 
 How it works:
 * add the credentials for your mysql server and the databases
+* write in the ignore table textarea the tables you want to ignore without spaces and divaded by comma, is you want to ignore all tables that begins with a word use the syntax (ex. cache*)
 * click on get the diff(one will get a list with the tables with differences- tableName:typeOfDifference:indexName:numberOfDifferentRows)
 * click on the table to see the differences
 * if the column has more than 100 characters click on view to see the differences(it uses dynamic programing to see the differences)
 * click on make sql all to get the changes in the sql file (warning: do not click more times on this button)
+* one also can check the tables from the list and get the list of them for copy/pasting
 
 
 Todos:
