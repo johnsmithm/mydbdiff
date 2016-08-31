@@ -96,11 +96,14 @@
 		}
 		$notConditionB = str_replace('aa.','bb.',str_replace('b.','a.',$notCondition));
 		$limitString = " LIMIT $limit OFFSET $offset";
+		$tableB = " $table aaa,";
+		
 		if($limit == 0){
 			$limitString = "";
 			$select = " COUNT(a.$index) AS mediathekTableRowsNumber ";
 			$selectA = " COUNT(aaa.$index) AS mediathekTableRowsNumber ";
 			$selectB = " COUNT(bbb.$index) AS mediathekTableRowsNumber ";
+			
 		}
 		//changed
 		$sql = "
@@ -134,7 +137,7 @@
 		//drop
 		$sqlB = "
 		SELECT  $selectB
-		FROM $table aaa , `$db2`.`$table` bbb
+		FROM `$db2`.`$table` bbb
 		WHERE NOT EXISTS (SELECT * FROM  `$table` aa1 WHERE  $notConditionA LIMIT 1) AND 
 		NOT EXISTS (
 			SELECT a.$index
@@ -155,7 +158,7 @@
 	
 		if(count($fields)==0)
 			return null;
-		if(count($fields)==1){		
+		if(count($fields)==1){	
 		
 			$sqlA = "SELECT $selectA
 		    FROM   $table aaa
@@ -170,14 +173,15 @@
 		$bigSql = "SELECT * FROM (( ".$sqlA." ) UNION  ( ".$sqlB.") ) AS t $limitString";
 	
 		}
-		//echo $bigSql."<br/>";
 		
 		if($limit == 0){
 			if(count($fields)==1)
 				$bigSql = "SELECT SUM(mediathekTableRowsNumber) AS mediathekTableRowsNumber1 FROM (( ".$sqlA." ) UNION  ( ".$sqlB.")) AS t $limitString";
 			else 
 				$bigSql = "SELECT SUM(mediathekTableRowsNumber) AS mediathekTableRowsNumber1 FROM (( ".$sqlA." ) UNION  ( ".$sqlB.")  UNION (".$sql.")) AS t $limitString";
-	
+			
+		
+
 			$result = $conn->query($bigSql);
 			$data = $result->fetch_assoc();
 			
@@ -186,14 +190,15 @@
 						
 		}else {
 			//echo 1;
-			$result = $conn->query($bigSql);
+			//echo $sqlB."<br/>";
+			$result = $conn->query($sqlB);
 			if ($result->num_rows > 0) {
 				
 			    while($row = $result->fetch_assoc()) {
 			    	$diff[] = $row;
 					/*echo "<pre>";
 					print_r($row);
-					echo "</pre>";*/ 
+					echo "</pre>"; */
 			    }
 			}
 		}
@@ -391,12 +396,12 @@
 						$insert = array();
 						foreach ($fieldsDB1 as $val) {
 							//procces fields
-							$d[$val] = addslashes($d[$val]);
-							$d[$val] = ereg_replace("\n","\\n",$d[$val]);
+						//	$d[$val] = addslashes($d[$val]);
+						//	$d[$val] = ereg_replace("\n","\\n",$d[$val]);
 							//if (!isset($d[$val]) || !isset($d[$val])) 
 							//		{ $d[$val] = "''" ; }
-							$d['b'.$val] = addslashes($d['b'.$val]);
-							$d['b'.$val] = ereg_replace("\n","\\n",$d['b'.$val]);
+						//	$d['b'.$val] = addslashes($d['b'.$val]);
+						//	$d['b'.$val] = ereg_replace("\n","\\n",$d['b'.$val]);
 							//if (!isset($d['b'.$val]) || $d['b'.$val] == '') 
 							//		{ $d['b'.$val] = "''" ; }
 
@@ -415,7 +420,7 @@
 						$updateSql = implode(" , ", $update);
 						if(count($where)!=0 && count($update)!=0)
 							$sql = "UPDATE `$value` SET $updateSql WHERE $whereSql LIMIT 1";
-						elseif (count($insert)!=0 && (!isset($d['b'.$val]) || $d['b'.$val] == '')) {
+						elseif (count($insert)!=0 && (!isset($d['b'.$val]) || $d['b'.$val] == '')) {//some problems
 							$fieldSQL = implode("`,`", $fieldsDB1);
 							$insertSQL = implode(",", $insert);
 							$sql = "INSERT `$value` (`$fieldSQL`) VALUES ($insertSQL)";
@@ -427,6 +432,7 @@
 						$sql = addcslashes  ($sql,"`");
 						//$sql = addcslashes  ($sql,"'");
 						exec("echo \"$sql;\" >> $path");
+						//maybe use another file and then use cat linux function
 					}
 					exec("echo \"\n\" >> $path");
 				}

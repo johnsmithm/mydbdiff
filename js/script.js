@@ -287,7 +287,7 @@ $( document ).ready(function() {
     for(var i=0;i<ignoreTables.length;++i){
       if(ignoreTables[i][ignoreTables[i].length-1]=='*'){
         var tableI = ignoreTables[i].split("*")[0];
-        
+
         if(table.search(tableI)==0)
           return true;
       }
@@ -330,7 +330,7 @@ $( document ).ready(function() {
   		data['db2']      = $("input[name=db2]").val();
   		data['host']     = $("input[name=host]").val();      
       data['fileName'] = fileName;
-      if($('textarea').val()!=""){
+      if($('textarea').val()!="" || ignoreTables.length!=0){
         ignoreTables = $('textarea').val().split(',');
         console.log(ignoreTables);
       }
